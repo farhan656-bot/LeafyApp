@@ -1,5 +1,6 @@
 package com.example.leafy.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,16 +40,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.leafy.data.LeafyDatabase
+import com.example.leafy.data.PlantEntity
 import com.example.leafy.ui.theme.LeafyGreen
-import kotlin.text.ifEmpty
+import kotlinx.coroutines.launch
+
 
 // --- LAYAR 3: ADD PLANT ---
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,6 +72,10 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
     val timeOptions = listOf("Pilih Waktu", "1x sehari", "2x sehari", "1x seminggu")
     val dayOptions = listOf("Pilih Hari", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu")
     val locationOptions = listOf("pilih Lokasi", "Indoor", "Outdoor", "Balkon")
+
+    val context = LocalContext.current
+    val db = remember { LeafyDatabase.getDatabase(context) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -172,8 +182,45 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
             Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = {
-                    // TODO: Tambahkan logika penyimpanan data di sini
-                    navController.popBackStack() // Kembali ke home setelah simpan
+                    scope.launch {
+                        if (plantName.isBlank()) {
+                            Toast.makeText(context, "Nama tanaman wajib diisi", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
+
+                        // Bersihkan nilai yang masih placeholder
+                        val cleanWaterTime = if (waterTime == timeOptions[0]) "" else waterTime
+                        val cleanWaterDay  = if (waterDay  == dayOptions[0]) "" else waterDay
+
+                        val wateringInfo = if (cleanWaterTime.isNotBlank() || cleanWaterDay.isNotBlank()) {
+                            "Siraman: ${cleanWaterTime.ifBlank { "-" }} ${cleanWaterDay.ifBlank { "" }}".trim()
+                        } else {
+                            "Siraman: -"
+                        }
+
+                        val cleanFertilizerTime = if (fertilizerTime == timeOptions[0]) "" else fertilizerTime
+                        val cleanFertilizerDay  = if (fertilizerDay  == dayOptions[0]) "" else fertilizerDay
+
+                        val fertilizerInfo = if (cleanFertilizerTime.isNotBlank() || cleanFertilizerDay.isNotBlank()) {
+                            " | Pupuk: ${cleanFertilizerTime.ifBlank { "-" }} ${cleanFertilizerDay.ifBlank { "" }}".trim()
+                        } else {
+                            ""
+                        }
+
+
+                        val scheduleText = wateringInfo + fertilizerInfo
+
+                        val plant = PlantEntity(
+                            name = plantName,
+                            schedule = scheduleText,
+                            lastWatered = "Belum pernah",   // default
+                            imageUri = null                 // nanti diisi kalau fitur foto sudah jadi
+                        )
+
+                        db.plantDao().insertPlant(plant)
+                        Toast.makeText(context, "Tanaman berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+                        navController.popBackStack() // kembali ke Home
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -1,4 +1,5 @@
-package com.example.leafy.ui.screens
+package com.example.leafy.screens
+
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -89,9 +90,9 @@ fun LoginScreen(navController: NavController) {
             Button(
                 onClick = {
                     scope.launch {
-                        val ok = repo.loginUser(email.trim(), password)
-                        if (ok) {
-                            prefs.setLoggedIn(email.trim(), true)
+                        val user = repo.loginUser(email.trim(), password)
+                        if (user != null) {
+                            prefs.setLoggedIn(user.email, user.name, true)
                             navController.navigate("home") {
                                 popUpTo("login") { inclusive = true }
                             }

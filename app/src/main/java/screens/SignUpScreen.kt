@@ -1,4 +1,4 @@
-package com.example.leafy.ui.screens
+package com.example.leafy.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -30,6 +30,7 @@ fun SignUpScreen(navController: NavController) {
     val db = remember { LeafyDatabase.getDatabase(context) }
     val repo = remember { UserRepository(db.userDao()) }
 
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -63,6 +64,17 @@ fun SignUpScreen(navController: NavController) {
         ) {
             Text("Sign Up", style = MaterialTheme.typography.titleLarge.copy(color = Color(0xFF333333)))
             Spacer(Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = name, onValueChange = { name = it },
+                label = { Text("Nama") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = LeafyGreen) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = textFieldColors
+            )
+
+            Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = email, onValueChange = { email = it },
@@ -99,11 +111,15 @@ fun SignUpScreen(navController: NavController) {
             Button(
                 onClick = {
                     scope.launch {
+                        if (name.isBlank()) {
+                            Toast.makeText(context, "Nama tidak boleh kosong", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
                         if (password != confirmPassword) {
                             Toast.makeText(context, "Konfirmasi password tidak cocok", Toast.LENGTH_SHORT).show()
                             return@launch
                         }
-                        val ok = repo.registerUser(email.trim(), password)
+                        val ok = repo.registerUser(name.trim(), email.trim(), password)
                         if (ok) {
                             Toast.makeText(context, "Pendaftaran berhasil!", Toast.LENGTH_SHORT).show()
                             navController.navigate("login") { popUpTo("signup") { inclusive = true } }

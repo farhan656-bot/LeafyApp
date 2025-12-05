@@ -74,6 +74,9 @@ dependencies {
     // --- DataStore ---
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // --- Image loading for URI preview ---
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     // --- Coroutines ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 

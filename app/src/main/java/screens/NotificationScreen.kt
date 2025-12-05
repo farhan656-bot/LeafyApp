@@ -1,4 +1,5 @@
-package com.example.leafy.ui.screens
+package com.example.leafy.screens
+
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

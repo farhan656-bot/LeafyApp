@@ -1,4 +1,5 @@
-package com.example.leafy.ui.screens
+package com.example.leafy.screens
+
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,8 +29,12 @@ fun ProfileScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) { email = prefs.getEmail() ?: "" }
+    LaunchedEffect(Unit) {
+        email = prefs.getEmail() ?: ""
+        name = prefs.getName() ?: ""
+    }
 
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         disabledBorderColor = Color.Gray,
@@ -59,6 +64,16 @@ fun ProfileScreen(navController: NavController) {
             Spacer(Modifier.height(24.dp))
 
             OutlinedTextField(
+                value = name, onValueChange = {}, enabled = false,
+                label = { Text("Nama") },
+                leadingIcon = { Icon(Icons.Default.Email, null) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = textFieldColors
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedTextField(
                 value = email, onValueChange = {}, enabled = false,
                 label = { Text("Email") },
                 leadingIcon = { Icon(Icons.Default.Email, null) },
@@ -82,7 +97,7 @@ fun ProfileScreen(navController: NavController) {
             Button(
                 onClick = {
                     scope.launch {
-                        prefs.setLoggedIn(email, false)
+                        prefs.setLoggedIn(email, name, false)
                         prefs.clear()
                         navController.navigate("login") {
                             popUpTo("home") { inclusive = true }

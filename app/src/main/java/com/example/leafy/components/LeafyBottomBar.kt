@@ -1,4 +1,4 @@
-package com.example.leafy.ui.components
+package com.example.leafy.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart

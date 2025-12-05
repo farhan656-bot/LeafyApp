@@ -7,7 +7,12 @@ import androidx.room.PrimaryKey
 data class PlantEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
-    val schedule: String,
-    val lastWatered: String,
-    val imageUri: String? = null
+    val waterFrequency: String,
+    val waterDay: String,
+    val fertilizerFrequency: String? = null,
+    val fertilizerDay: String? = null,
+    val location: String? = null,
+    val notes: String? = null,
+    val imageUri: String? = null,
+    val lastWatered: Long? = null
 )

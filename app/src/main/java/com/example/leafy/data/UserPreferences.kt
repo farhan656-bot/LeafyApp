@@ -1,7 +1,6 @@
 package com.example.leafy.data
 
 import android.content.Context
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -9,33 +8,48 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-val Context.userDataStore by preferencesDataStore(name = "user_prefs")
+private val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
 class UserPreferences(private val context: Context) {
 
     companion object {
-        private val EMAIL_KEY = stringPreferencesKey("user_email")
-        private val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
+        private val KEY_EMAIL = stringPreferencesKey("email")
+        private val KEY_NAME = stringPreferencesKey("name")
+        private val KEY_LOGGED_IN = booleanPreferencesKey("logged_in")
     }
 
-    suspend fun setLoggedIn(email: String, status: Boolean) {
-        context.userDataStore.edit { prefs ->
-            prefs[EMAIL_KEY] = email
-            prefs[IS_LOGGED_IN] = status
+    /** Simpan status login */
+    suspend fun setLoggedIn(email: String, name: String, loggedIn: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_EMAIL] = email
+            prefs[KEY_NAME] = name
+            prefs[KEY_LOGGED_IN] = loggedIn
         }
     }
 
-    suspend fun getEmail(): String? {
-        val prefs = context.userDataStore.data.first()
-        return prefs[EMAIL_KEY]
-    }
-
+    /** Cek apakah user sudah login (dipakai di MainActivity) */
     suspend fun isUserLoggedIn(): Boolean {
-        val prefs = context.userDataStore.data.first()
-        return prefs[IS_LOGGED_IN] ?: false
+        return context.dataStore.data
+            .map { it[KEY_LOGGED_IN] ?: false }
+            .first()
     }
 
+    /** Ambil email (dipakai HomeScreen & ProfileScreen) */
+    suspend fun getEmail(): String? {
+        return context.dataStore.data
+            .map { it[KEY_EMAIL] }
+            .first()
+    }
+
+    /** Ambil nama (dipakai HomeScreen & ProfileScreen) */
+    suspend fun getName(): String? {
+        return context.dataStore.data
+            .map { it[KEY_NAME] }
+            .first()
+    }
+
+    /** Hapus semua data (dipakai saat logout) */
     suspend fun clear() {
-        context.userDataStore.edit { it.clear() }
+        context.dataStore.edit { it.clear() }
     }
 }

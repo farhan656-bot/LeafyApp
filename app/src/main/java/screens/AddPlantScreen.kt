@@ -1,6 +1,10 @@
-package com.example.leafy.ui.screens
+package com.example.leafy.screens
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,21 +50,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.leafy.data.LeafyDatabase
 import com.example.leafy.data.PlantEntity
 import com.example.leafy.ui.theme.LeafyGreen
 import kotlinx.coroutines.launch
 
-
-// --- LAYAR 3: ADD PLANT ---
+// --- LAYAR 3: ADD / EDIT PLANT ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) {
+fun AddPlantScreen(navController: NavController, plantId: Int? = null, modifier: Modifier = Modifier) {
 
     var plantName by remember { mutableStateOf("") }
     var waterTime by remember { mutableStateOf("") }
@@ -68,6 +76,8 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
     var fertilizerDay by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+    var existingPlant by remember { mutableStateOf<PlantEntity?>(null) }
 
     val timeOptions = listOf("Pilih Waktu", "1x sehari", "2x sehari", "1x seminggu")
     val dayOptions = listOf("Pilih Hari", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu")
@@ -77,19 +87,39 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
     val db = remember { LeafyDatabase.getDatabase(context) }
     val scope = rememberCoroutineScope()
 
+    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        selectedImageUri = uri?.toString()
+    }
+
+    LaunchedEffect(plantId) {
+        if (plantId != null) {
+            db.plantDao().getPlantById(plantId)?.let { plant ->
+                existingPlant = plant
+                plantName = plant.name
+                waterTime = plant.waterFrequency.ifBlank { timeOptions[0] }
+                waterDay = plant.waterDay.ifBlank { dayOptions[0] }
+                fertilizerTime = plant.fertilizerFrequency?.ifBlank { timeOptions[0] } ?: timeOptions[0]
+                fertilizerDay = plant.fertilizerDay?.ifBlank { dayOptions[0] } ?: dayOptions[0]
+                location = plant.location ?: locationOptions[0]
+                notes = plant.notes ?: ""
+                selectedImageUri = plant.imageUri
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "Tambah tanaman",
+                        if (plantId == null) "Tambah tanaman" else "Edit tanaman",
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                         color = Color.White
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) { // Aksi kembali
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Tutup",
@@ -157,7 +187,10 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
             }
 
             FormLabel(text = "Upload foto tanaman")
-            UploadPhotoButtons()
+            UploadPhotoButtons(
+                selectedImageUri = selectedImageUri,
+                onPickFromGallery = { imagePickerLauncher.launch("image/*") }
+            )
 
             FormLabel(text = "Lokasi (optional)")
             FormDropdown(
@@ -188,38 +221,33 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
                             return@launch
                         }
 
-                        // Bersihkan nilai yang masih placeholder
-                        val cleanWaterTime = if (waterTime == timeOptions[0]) "" else waterTime
-                        val cleanWaterDay  = if (waterDay  == dayOptions[0]) "" else waterDay
-
-                        val wateringInfo = if (cleanWaterTime.isNotBlank() || cleanWaterDay.isNotBlank()) {
-                            "Siraman: ${cleanWaterTime.ifBlank { "-" }} ${cleanWaterDay.ifBlank { "" }}".trim()
-                        } else {
-                            "Siraman: -"
-                        }
-
-                        val cleanFertilizerTime = if (fertilizerTime == timeOptions[0]) "" else fertilizerTime
-                        val cleanFertilizerDay  = if (fertilizerDay  == dayOptions[0]) "" else fertilizerDay
-
-                        val fertilizerInfo = if (cleanFertilizerTime.isNotBlank() || cleanFertilizerDay.isNotBlank()) {
-                            " | Pupuk: ${cleanFertilizerTime.ifBlank { "-" }} ${cleanFertilizerDay.ifBlank { "" }}".trim()
-                        } else {
-                            ""
-                        }
-
-
-                        val scheduleText = wateringInfo + fertilizerInfo
+                        val cleanWaterTime = waterTime.takeIf { it.isNotBlank() && it != timeOptions[0] } ?: ""
+                        val cleanWaterDay = waterDay.takeIf { it.isNotBlank() && it != dayOptions[0] } ?: ""
+                        val cleanFertilizerTime = fertilizerTime.takeIf { it.isNotBlank() && it != timeOptions[0] }
+                        val cleanFertilizerDay = fertilizerDay.takeIf { it.isNotBlank() && it != dayOptions[0] }
+                        val cleanLocation = location.takeIf { it.isNotBlank() && it != locationOptions[0] }
 
                         val plant = PlantEntity(
-                            name = plantName,
-                            schedule = scheduleText,
-                            lastWatered = "Belum pernah",   // default
-                            imageUri = null                 // nanti diisi kalau fitur foto sudah jadi
+                            id = existingPlant?.id ?: 0,
+                            name = plantName.trim(),
+                            waterFrequency = cleanWaterTime,
+                            waterDay = cleanWaterDay,
+                            fertilizerFrequency = cleanFertilizerTime,
+                            fertilizerDay = cleanFertilizerDay,
+                            location = cleanLocation,
+                            notes = notes.trim().ifBlank { null },
+                            imageUri = selectedImageUri,
+                            lastWatered = existingPlant?.lastWatered
                         )
 
-                        db.plantDao().insertPlant(plant)
-                        Toast.makeText(context, "Tanaman berhasil ditambahkan", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack() // kembali ke Home
+                        if (existingPlant != null) {
+                            db.plantDao().updatePlant(plant)
+                            Toast.makeText(context, "Perubahan disimpan", Toast.LENGTH_SHORT).show()
+                        } else {
+                            db.plantDao().insertPlant(plant)
+                            Toast.makeText(context, "Tanaman berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+                        }
+                        navController.popBackStack()
                     }
                 },
                 modifier = Modifier
@@ -231,7 +259,11 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(text = "Tambah tanaman", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (existingPlant == null) "Tambah tanaman" else "Simpan perubahan",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -307,7 +339,7 @@ fun FormDropdown(
                 }
             },
             modifier = Modifier
-                .menuAnchor() // KODE INI DIPINDAHKAN KE ExposedDropdownMenuBox
+                .menuAnchor()
                 .fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -332,7 +364,6 @@ fun FormDropdown(
                         onOptionSelected(option)
                         expanded = false
                     },
-                    // Mengatur warna konten dropdown agar terlihat jelas
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                 )
             }
@@ -341,46 +372,76 @@ fun FormDropdown(
 }
 
 @Composable
-fun UploadPhotoButtons() {
+fun UploadPhotoButtons(
+    selectedImageUri: String?,
+    onPickFromGallery: () -> Unit
+) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IconButton(
-                onClick = { /* TODO: Aksi upload galeri */ },
-                modifier = Modifier
-                    .size(80.dp)
-                    .border(2.dp, Color.LightGray, RoundedCornerShape(8.dp))
-            ) {
-                Icon(
+            if (selectedImageUri != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(selectedImageUri)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Foto tanaman",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            } else {
+                Image(
                     imageVector = Icons.Default.UploadFile,
-                    contentDescription = "Upload dari Galeri",
-                    modifier = Modifier.size(40.dp),
-                    tint = Color.DarkGray
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
                 )
+                Spacer(modifier = Modifier.height(12.dp))
             }
-            IconButton(
-                onClick = { /* TODO: Aksi buka kamera */ },
-                modifier = Modifier
-                    .size(80.dp)
-                    .border(2.dp, Color.LightGray, RoundedCornerShape(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.PhotoCamera,
-                    contentDescription = "Ambil Foto",
-                    modifier = Modifier.size(40.dp),
-                    tint = Color.DarkGray
-                )
+                IconButton(
+                    onClick = onPickFromGallery,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .border(2.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.UploadFile,
+                        contentDescription = "Upload dari Galeri",
+                        modifier = Modifier.size(40.dp),
+                        tint = Color.DarkGray
+                    )
+                }
+                IconButton(
+                    onClick = { /* kamera dapat ditambahkan kemudian */ },
+                    modifier = Modifier
+                        .size(80.dp)
+                        .border(2.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoCamera,
+                        contentDescription = "Ambil Foto",
+                        modifier = Modifier.size(40.dp),
+                        tint = Color.DarkGray
+                    )
+                }
             }
         }
     }

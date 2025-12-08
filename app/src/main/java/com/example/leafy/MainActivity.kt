@@ -14,8 +14,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.leafy.data.UserPreferences
-import com.example.leafy.ui.components.LeafyBottomBar
-import com.example.leafy.ui.screens.*
+import com.example.leafy.components.LeafyBottomBar
+import com.example.leafy.screens.*
 import com.example.leafy.ui.theme.LeafyTheme
 import kotlinx.coroutines.runBlocking
 
@@ -51,6 +51,13 @@ class MainActivity : ComponentActivity() {
                         composable("signup") { SignUpScreen(navController) }
                         composable("home") { HomeScreen(navController) }
                         composable("addPlant") { AddPlantScreen(navController) }
+                        composable(
+                            "editPlant/{plantId}",
+                            arguments = listOf(navArgument("plantId") { type = NavType.IntType })
+                        ) { backStack ->
+                            val id = backStack.arguments?.getInt("plantId") ?: 0
+                            AddPlantScreen(navController, id)
+                        }
                         composable(
                             "plantDetail/{plantId}",
                             arguments = listOf(navArgument("plantId") { type = NavType.IntType })

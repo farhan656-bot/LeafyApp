@@ -202,7 +202,6 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
                                 )
                             )
                         }
-
                     },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White)
@@ -243,7 +242,6 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
                 ) {
                     Text("Lihat Riwayat Lengkap 📜", fontWeight = FontWeight.Bold)
                 }
-
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }

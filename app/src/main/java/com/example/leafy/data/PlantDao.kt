@@ -30,6 +30,8 @@ interface PlantDao {
     @Query("DELETE FROM plants WHERE id = :id")
     suspend fun deletePlant(id: Int)
 
+    @Query("SELECT * FROM plants ORDER BY name ASC")
+    fun observeAllPlants(): Flow<List<PlantEntity>>
 
     @Query("UPDATE plants SET lastWatered = :lastWatered WHERE id = :id")
     suspend fun updateLastWatered(id: Int, lastWatered: Long)

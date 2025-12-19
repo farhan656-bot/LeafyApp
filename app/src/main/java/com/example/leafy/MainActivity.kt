@@ -18,6 +18,8 @@ import com.example.leafy.components.LeafyBottomBar
 import com.example.leafy.screens.*
 import com.example.leafy.ui.theme.LeafyTheme
 import kotlinx.coroutines.runBlocking
+import com.example.leafy.screens.GalleryScreen
+
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)

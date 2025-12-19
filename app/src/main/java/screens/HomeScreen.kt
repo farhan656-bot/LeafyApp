@@ -97,7 +97,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingHeader(name: String) {
     Text(
-        text = "Good Morning,\n$name",
+        text = "Hallo, $name",
         color = Color.White,
         fontSize = 32.sp,
         fontWeight = FontWeight.Bold,

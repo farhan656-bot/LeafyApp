@@ -32,12 +32,12 @@ fun CareHistoryScreen(navController: NavController, plantId: Int) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
 
-    // Panggil ViewModel dengan mengirim plantId
+
     val viewModel: CareHistoryViewModel = viewModel(
         factory = CareHistoryViewModelFactory(application, plantId)
     )
 
-    // Ambil data list
+
     val historyList by viewModel.historyList.collectAsState()
 
     Scaffold(
@@ -60,12 +60,12 @@ fun CareHistoryScreen(navController: NavController, plantId: Int) {
                 .padding(16.dp)
         ) {
             if (historyList.isEmpty()) {
-                // Tampilan jika kosong
+
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Belum ada riwayat. Yuk rawat tanamanmu!", color = Color.Gray)
                 }
             } else {
-                // Tampilan Daftar Riwayat
+
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -87,13 +87,13 @@ fun CareHistoryCard(history: CareHistory) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)) // Hijau muda pucat
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9))
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ikon berdasarkan tipe perawatan
+
             Icon(
                 imageVector = if (history.careType == "water") Icons.Default.WaterDrop else Icons.Default.History,
                 contentDescription = null,

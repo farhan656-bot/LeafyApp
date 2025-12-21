@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🔍 Cek apakah user sudah login via DataStore
+
         val prefs = UserPreferences(this)
         val isLoggedIn = runBlocking { prefs.isUserLoggedIn() }
 
@@ -43,18 +43,16 @@ class MainActivity : ComponentActivity() {
             LeafyTheme {
                 val navController = rememberNavController()
 
-                // Daftar rute yang menampilkan Bottom Bar
+
                 val bottomRoutes = listOf("home", "stats", "gallery", "profile")
 
-                // Cek rute saat ini untuk menyembunyikan/menampilkan Bottom Bar
+
                 val navBackStackEntry = navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry.value?.destination?.route
 
                 Scaffold(
                     bottomBar = {
-                        // Tampilkan BottomBar hanya jika rute saat ini ada di daftar bottomRoutes
-                        // Kita perlu logic 'contains' yang sedikit lebih pintar jika ada argumen,
-                        // tapi untuk rute dasar ini sudah cukup.
+
                         if (currentRoute in bottomRoutes) {
                             LeafyBottomBar(navController, currentRoute ?: "home")
                         }
@@ -65,16 +63,16 @@ class MainActivity : ComponentActivity() {
                         startDestination = if (isLoggedIn) "home" else "onboarding",
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        // --- AUTH & ONBOARDING ---
+
                         composable("onboarding") { OnboardingScreen(navController) }
                         composable("login") { LoginScreen(navController) }
                         composable("signup") { SignUpScreen(navController) }
 
-                        // --- UTAMA ---
+
                         composable("home") { HomeScreen(navController) }
                         composable("addPlant") { AddPlantScreen(navController) }
 
-                        // --- DETAIL TANAMAN ---
+
                         composable(
                             "plantDetail/{plantId}",
                             arguments = listOf(navArgument("plantId") { type = NavType.IntType })
@@ -83,18 +81,16 @@ class MainActivity : ComponentActivity() {
                             PlantDetailScreen(navController, id)
                         }
 
-                        // --- RIWAYAT PERAWATAN (BARU DITAMBAHKAN) ---
+
                         composable(
                             route = "careHistory/{plantId}",
                             arguments = listOf(navArgument("plantId") { type = NavType.IntType })
                         ) { backStack ->
                             val id = backStack.arguments?.getInt("plantId") ?: 0
-                            // Memanggil layar CareHistoryScreen
+
                             CareHistoryScreen(navController, id)
                         }
-                        // --------------------------------------------
 
-                        // --- MENU BAWAH ---
                         composable("profile") { ProfileScreen(navController) }
                         composable("stats") { StatisticsScreen(navController) }
                         composable("notifications") { NotificationScreen(navController) }

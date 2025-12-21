@@ -56,7 +56,7 @@ import com.example.leafy.ui.theme.LeafyGreen
 import kotlinx.coroutines.launch
 
 
-// --- LAYAR 3: ADD PLANT ---
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) {
@@ -213,13 +213,13 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
                         val plant = PlantEntity(
                             name = plantName,
                             schedule = scheduleText,
-                            lastWatered = "Belum pernah",   // default
-                            imageUri = null                 // nanti diisi kalau fitur foto sudah jadi
+                            lastWatered = "Belum pernah",
+                            imageUri = null
                         )
 
                         db.plantDao().insertPlant(plant)
                         Toast.makeText(context, "Tanaman berhasil ditambahkan", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack() // kembali ke Home
+                        navController.popBackStack()
                     }
                 },
                 modifier = Modifier
@@ -238,7 +238,6 @@ fun AddPlantScreen(navController: NavController, modifier: Modifier = Modifier) 
     }
 }
 
-// --- Helper Composable untuk Form ---
 @Composable
 fun FormLabel(text: String) {
     Text(
@@ -307,7 +306,7 @@ fun FormDropdown(
                 }
             },
             modifier = Modifier
-                .menuAnchor() // KODE INI DIPINDAHKAN KE ExposedDropdownMenuBox
+                .menuAnchor()
                 .fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -332,7 +331,7 @@ fun FormDropdown(
                         onOptionSelected(option)
                         expanded = false
                     },
-                    // Mengatur warna konten dropdown agar terlihat jelas
+
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                 )
             }

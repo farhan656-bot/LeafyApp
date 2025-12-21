@@ -20,7 +20,7 @@ interface PlantDao {
     @Query("DELETE FROM plants WHERE id = :id")
     suspend fun deletePlant(id: Int)
 
-    // 👉 UPDATE terakhir dirawat
+
     @Query("UPDATE plants SET lastWatered = :lastWatered WHERE id = :id")
     suspend fun updateLastWatered(id: Int, lastWatered: String)
 }

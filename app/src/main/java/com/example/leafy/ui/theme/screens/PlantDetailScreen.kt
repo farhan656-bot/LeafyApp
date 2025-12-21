@@ -32,7 +32,7 @@ import androidx.navigation.NavController
 import com.example.leafy.LeafyApp
 import com.example.leafy.R
 import com.example.leafy.data.LeafyDatabase
-import com.example.leafy.data.Notification // Pastikan file Entity Anda bernama Notification.kt
+import com.example.leafy.data.Notification
 import com.example.leafy.data.PlantEntity
 import com.example.leafy.ui.theme.DarkerGreen
 import com.example.leafy.ui.theme.LeafyGreen
@@ -44,9 +44,7 @@ import java.util.Date
 import java.util.Locale
 import com.example.leafy.data.CareHistory
 
-// ==========================
-//  NOTIFICATION FUNCTION
-// ==========================
+
 fun showSystemNotification(context: Context, title: String, message: String) {
     val channelId = "leafy_channel"
     val notificationId = System.currentTimeMillis().toInt()
@@ -62,7 +60,7 @@ fun showSystemNotification(context: Context, title: String, message: String) {
     }
 
     val builder = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(R.drawable.leafy) // Pastikan gambar leafy ada di drawable
+        .setSmallIcon(R.drawable.leafy)
         .setContentTitle(title)
         .setContentText(message)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -88,9 +86,9 @@ fun showSystemNotification(context: Context, title: String, message: String) {
     }
 }
 
-// ==========================
-//      SCREEN CONTENT
-// ==========================
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlantDetailScreen(navController: NavController, plantId: Int) {
@@ -98,7 +96,7 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
     val db = remember { LeafyDatabase.getDatabase(context) }
     val scope = rememberCoroutineScope()
 
-    // Request Permission Notifikasi (Android 13+)
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { /* Izin diterima/ditolak */ }
@@ -139,7 +137,7 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
                     .verticalScroll(rememberScrollState()), // Agar bisa discroll
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Gambar Tanaman
+
                 Image(
                     painter = painterResource(id = R.drawable.leafy),
                     contentDescription = currentPlant.name,
@@ -150,7 +148,7 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
                         .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
                 )
 
-                // Nama Tanaman
+
                 Text(
                     text = currentPlant.name,
                     fontSize = 32.sp,
@@ -159,7 +157,7 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
                     modifier = Modifier.padding(top = 24.dp)
                 )
 
-                // Kartu Info
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -176,29 +174,50 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // TOMBOL 1: Tandai Sudah Dirawat
+
                 Button(
                     onClick = {
                         scope.launch {
                             val today = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date())
 
-                            // --- TAMBAHKAN BARIS INI ---
-                            val currentTime = System.currentTimeMillis() // Definisi waktu sekarang
-                            // ---------------------------
 
-                            // Update Database
+                            val currentTime = System.currentTimeMillis()
+                            val quotes = listOf(
+                                "Tumbuh itu butuh waktu, sabar ya! 🌱",
+                                "Setiap tetes air adalah kehidupan. Kerja bagus! 💧",
+                                "Rawatlah tanamanmu seperti kamu merawat impianmu. ✨",
+                                "Hari ini kamu sudah berbuat baik untuk bumi. 🌍",
+                                "Satu langkah kecil untuk pertumbuhan yang besar. 📈",
+                                "Tanaman bahagia, hati pemiliknya juga bahagia! 💚",
+                                "Konsistensi adalah kunci pertumbuhan. 🔑",
+                                "Lihatlah dia tumbuh berkat kasih sayangmu. 🌿",
+                                "Kamu hebat! Teruslah merawat hal-hal baik. 👍",
+                                "Jangan lupa tersenyum hari ini! 😊"
+                            )
+                            val randomQuote = quotes.random()
+
+
+
                             db.plantDao().updateLastWatered(currentPlant.id, today)
                             plant = currentPlant.copy(lastWatered = today)
 
-                            // Tampilkan Notifikasi & Simpan ke DB Notifikasi
-                            showSystemNotification(context, "Perawatan", "${currentPlant.name} sudah dirawat! 🌿")
 
-                            // Simpan ke Riwayat
+                            showSystemNotification(context, "Perawatan ${currentPlant.name}", randomQuote)
+
+
                             db.careHistoryDao().insertCareHistory(
-                                CareHistory( // Bisa langsung CareHistory karena sudah diimport
+                                CareHistory(
                                     plantId = currentPlant.id,
-                                    careTimestamp = currentTime, // Sekarang variabel ini dikenali
+                                    careTimestamp = currentTime,
                                     careType = "Disiram"
+                                )
+                            )
+                            db.notificationDao().insert(
+                                com.example.leafy.data.Notification(
+                                    title = "Perawatan ${currentPlant.name}",
+                                    message = randomQuote,
+                                    timestamp = currentTime,
+                                    isRead = false
                                 )
                             )
                         }
@@ -211,7 +230,7 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // TOMBOL 2: Hapus Tanaman
+
                 Button(
                     onClick = {
                         scope.launch {
@@ -227,16 +246,16 @@ fun PlantDetailScreen(navController: NavController, plantId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // TOMBOL 3: LIHAT RIWAYAT (Outline Button)
+
                 OutlinedButton(
                     onClick = {
-                        // Navigasi ke halaman riwayat
+
                         navController.navigate("careHistory/${plantId}")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    // Border putih agar terlihat di background hijau
+
                     border = BorderStroke(1.dp, Color.White),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                 ) {

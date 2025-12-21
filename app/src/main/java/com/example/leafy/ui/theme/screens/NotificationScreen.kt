@@ -33,14 +33,13 @@ fun NotificationScreen(navController: NavController) {
     val context = LocalContext.current
     val app = context.applicationContext as Application
 
-    // 1. Panggil ViewModel
+
     val viewModel: NotificationViewModel = viewModel(factory = NotificationViewModelFactory(app))
 
-    // 2. Ambil data asli dari Database
+
     val notifications by viewModel.notifications.collectAsState()
 
-    // 3. Efek Otomatis: Tandai semua sudah dibaca saat layar dibuka
-    // (Ini yang membuat angka di lonceng hilang)
+
     LaunchedEffect(Unit) {
         viewModel.markAllAsRead()
     }
@@ -51,12 +50,12 @@ fun NotificationScreen(navController: NavController) {
             .background(LeafyGreen)
             .padding(16.dp)
     ) {
-        // --- HEADER ---
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Back",
-                tint = Color.White, // Saya ubah jadi putih agar kontras dengan hijau
+                tint = Color.White,
                 modifier = Modifier
                     .size(24.dp)
                     .clickable { navController.popBackStack() }
@@ -69,14 +68,14 @@ fun NotificationScreen(navController: NavController) {
         Text("Notifications", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Color.White)
         Spacer(Modifier.height(16.dp))
 
-        // --- DAFTAR NOTIFIKASI ASLI ---
+
         if (notifications.isEmpty()) {
             // Tampilan jika kosong
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Belum ada notifikasi", color = Color.White.copy(alpha = 0.7f))
             }
         } else {
-            // List Notifikasi dari Database
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -90,7 +89,7 @@ fun NotificationScreen(navController: NavController) {
 
 @Composable
 fun NotificationCard(notification: Notification) {
-    // Format tanggal: "05 Des 2025, 14:30"
+
     val dateString = remember(notification.timestamp) {
         val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
         sdf.format(notification.timestamp)
@@ -114,7 +113,7 @@ fun NotificationCard(notification: Notification) {
             Spacer(Modifier.width(16.dp))
 
             Column {
-                // Pesan Notifikasi (Contoh: "Mawar sudah dirawat...")
+
                 Text(
                     text = notification.message,
                     color = Color.Black,
@@ -122,7 +121,7 @@ fun NotificationCard(notification: Notification) {
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                // Waktu Notifikasi
+
                 Text(
                     text = dateString,
                     color = Color.Gray,

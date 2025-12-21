@@ -10,5 +10,5 @@ data class Notification(
     val message: String,
     val timestamp: Long,
     val title: String,
-    val isRead: Boolean = false // Ini penting untuk menghitung notifikasi baru
+    val isRead: Boolean = false
 )

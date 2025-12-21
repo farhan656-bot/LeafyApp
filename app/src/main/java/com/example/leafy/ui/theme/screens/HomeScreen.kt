@@ -59,11 +59,11 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize(),
         containerColor = LeafyGreen,
 
-        // --- INI TOMBOL TAMBAH (+) YANG HILANG KEMARIN ---
+
         floatingActionButton = {
             AddPlantFAB(onClick = { navController.navigate("addPlant") })
         },
-        // -------------------------------------------------
+
 
         bottomBar = { HomeBottomBar() }
     ) { innerPadding ->
@@ -72,7 +72,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Header dengan Lonceng
+
             item {
                 HomeHeader(
                     name = "John",

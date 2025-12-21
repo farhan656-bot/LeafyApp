@@ -32,6 +32,7 @@ import coil.request.ImageRequest
 import com.example.leafy.data.LeafyDatabase
 import com.example.leafy.data.PlantEntity
 import com.example.leafy.ui.theme.LeafyGreen
+import com.example.leafy.utils.NotificationUtils
 import com.example.leafy.utils.StorageUtils
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,10 @@ fun AddPlantScreen(
     plantId: Int? = null,
     modifier: Modifier = Modifier
 ) {
+
+
+
+
     var plantName by remember { mutableStateOf("") }
     var waterTime by remember { mutableStateOf("") }
     var waterDay by remember { mutableStateOf("") }

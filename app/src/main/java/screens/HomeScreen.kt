@@ -51,16 +51,53 @@ import com.example.leafy.data.PlantEntity
 import com.example.leafy.data.UserPreferences
 import com.example.leafy.ui.theme.LeafyGreen
 import java.util.concurrent.TimeUnit
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.example.leafy.utils.NotificationUtils
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+
     val db = remember { LeafyDatabase.getDatabase(context) }
     val prefs = remember { UserPreferences(context) }
 
     val plants by db.plantDao().observePlants().collectAsState(initial = emptyList())
     var userName by remember { mutableStateOf<String?>(null) }
+
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            Toast.makeText(context, "Izin notifikasi diizinkan", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Izin notifikasi ditolak", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Minta izin saat user sudah masuk Home (hanya sekali)
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!granted) {
+                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         val storedName = prefs.getName()

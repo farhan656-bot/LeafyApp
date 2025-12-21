@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "144653555604",
+    "project_id": "demonotif-3edf6",
+    "storage_bucket": "demonotif-3edf6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144653555604:android:898fcb325e34a4ffd96181",
+        "android_client_info": {
+          "package_name": "com.example.leafy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1LdnOoyv03JHWu_ggmXLFwguYz1LdRgc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

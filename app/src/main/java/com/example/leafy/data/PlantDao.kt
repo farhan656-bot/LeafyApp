@@ -35,4 +35,7 @@ interface PlantDao {
 
     @Query("UPDATE plants SET lastWatered = :lastWatered WHERE id = :id")
     suspend fun updateLastWatered(id: Int, lastWatered: Long)
+
+    @Query("UPDATE plants SET lastWatered = NULL WHERE id = :plantId")
+    suspend fun resetLastWatered(plantId: Int)
 }

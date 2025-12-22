@@ -1,16 +1,15 @@
 package com.example.leafy.screens
 
+import android.Manifest
+import android.app.Application
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -18,20 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +30,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -50,59 +40,39 @@ import com.example.leafy.data.LeafyDatabase
 import com.example.leafy.data.PlantEntity
 import com.example.leafy.data.UserPreferences
 import com.example.leafy.ui.theme.LeafyGreen
-import java.util.concurrent.TimeUnit
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import com.example.leafy.utils.NotificationUtils
-
+import com.example.leafy.viewmodel.HomeViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val app = context.applicationContext as Application
 
     val db = remember { LeafyDatabase.getDatabase(context) }
     val prefs = remember { UserPreferences(context) }
-
     val plants by db.plantDao().observePlants().collectAsState(initial = emptyList())
     var userName by remember { mutableStateOf<String?>(null) }
+
+    val homeViewModel: HomeViewModel = viewModel()
+    val unreadCount by homeViewModel.unreadCount.collectAsState()
 
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) {
-            Toast.makeText(context, "Izin notifikasi diizinkan", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "Izin notifikasi ditolak", Toast.LENGTH_SHORT).show()
-        }
+        if (!granted) Toast.makeText(context, "Izin notifikasi ditolak", Toast.LENGTH_SHORT).show()
     }
 
-    // Minta izin saat user sudah masuk Home (hanya sekali)
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val granted = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!granted) {
-                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            if (!granted) notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
-    }
 
-    LaunchedEffect(Unit) {
         val storedName = prefs.getName()
         val emailName = prefs.getEmail()?.substringBefore("@")
-        userName = storedName?.ifBlank { null } ?: emailName ?: "Leafy friend"
+        userName = storedName?.ifBlank { null } ?: emailName ?: "Leafy Friend"
     }
 
     Scaffold(
@@ -117,8 +87,17 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            item { GreetingHeader(name = userName ?: "Leafy friend") }
-            item { ReminderCard(count = calculatePlantsNeedWatering(plants)) }
+            item {
+                HomeHeader(
+                    name = userName ?: "Leafy Friend",
+                    unreadCount = unreadCount,
+                    navController = navController
+                )
+            }
+
+            item {
+                ReminderCard(count = calculatePlantsNeedWatering(plants))
+            }
 
             items(plants) { plant ->
                 PlantCard(plant = plant) {
@@ -132,42 +111,44 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun GreetingHeader(name: String) {
-    Text(
-        text = "Hallo, $name",
-        color = Color.White,
-        fontSize = 32.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 24.dp)
-    )
+fun HomeHeader(name: String, unreadCount: Int, navController: NavController) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Good Morning,\n$name",
+            color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold, lineHeight = 40.sp
+        )
+
+        IconButton(onClick = { navController.navigate("notification") }) {
+            BadgedBox(
+                badge = {
+                    if (unreadCount > 0) {
+                        Badge(containerColor = Color.Red) { Text("$unreadCount", color = Color.White) }
+                    }
+                }
+            ) {
+                Icon(Icons.Filled.Notifications, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+            }
+        }
+    }
 }
 
 @Composable
 fun ReminderCard(count: Int) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "$count tanaman perlu disiram hari ini",
-                modifier = Modifier.weight(1f),
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+                text = if (count > 0) "$count tanaman perlu perhatian hari ini" else "Semua tanaman sudah aman!",
+                modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, color = Color.Black
             )
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Lihat detail",
-                tint = Color.Black
-            )
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Black)
         }
     }
 }
@@ -175,93 +156,54 @@ fun ReminderCard(count: Int) {
 @Composable
 fun PlantCard(plant: PlantEntity, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            PlantThumbnail(plant)
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (!plant.imageUri.isNullOrBlank()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current).data(plant.imageUri).crossfade(true).build(),
+                    contentDescription = null, contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))
+                )
+            } else {
+                Image(painter = painterResource(id = R.drawable.leafy), contentDescription = null, modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)))
+            }
+
             Spacer(modifier = Modifier.width(16.dp))
+
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    plant.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    buildScheduleText(plant),
-                    fontSize = 14.sp,
-                    color = Color.DarkGray
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    formatLastWateredLabel(plant.lastWatered),
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
+                Text(plant.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                Text(plant.schedule.ifBlank { "Jadwal belum diatur" }, fontSize = 14.sp, color = Color.DarkGray)
+
+
+                val lastWateredText = if (plant.lastWatered == null || plant.lastWatered == 0L) {
+                    "Belum pernah"
+                } else {
+                    SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(plant.lastWatered!!))
+                }
+                Text("Terakhir disiram: $lastWateredText", fontSize = 14.sp, color = Color.Gray)
             }
         }
     }
 }
 
 @Composable
-private fun PlantThumbnail(plant: PlantEntity) {
-    if (!plant.imageUri.isNullOrBlank()) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(plant.imageUri)
-                .crossfade(true)
-                .build(),
-            contentDescription = plant.name,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(RoundedCornerShape(12.dp))
-        )
-    } else {
-        Image(
-            painter = painterResource(id = R.drawable.leafy),
-            contentDescription = plant.name,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(RoundedCornerShape(12.dp))
-        )
-    }
-}
-
-@Composable
 fun AddPlantFAB(onClick: () -> Unit) {
-    FloatingActionButton(
-        onClick = onClick,
-        containerColor = Color.White,
-        contentColor = Color.Black,
-        shape = CircleShape
-    ) {
-        Icon(Icons.Filled.Add, "Tambah Tanaman")
+    FloatingActionButton(onClick = onClick, containerColor = Color.White, contentColor = Color.Black, shape = CircleShape) {
+        Icon(Icons.Filled.Add, contentDescription = "Tambah")
     }
 }
 
-/* ----------------- Helper untuk hitung tanaman perlu disiram ----------------- */
 
 private fun calculatePlantsNeedWatering(plants: List<PlantEntity>): Int {
     return plants.count { plant ->
-        val interval = frequencyToIntervalDays(plant.waterFrequency)   // dari PlantUiUtils.kt
-        if (interval == null) {
+        if (plant.lastWatered == null || plant.lastWatered == 0L) {
             true
         } else {
-            val lastWatered = plant.lastWatered ?: 0L
-            val daysAgo =
-                TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastWatered).toInt()
-            daysAgo >= interval
+            val satuHariInMs = 24 * 60 * 60 * 1000L
+            (System.currentTimeMillis() - plant.lastWatered!!) >= satuHariInMs
         }
     }
 }

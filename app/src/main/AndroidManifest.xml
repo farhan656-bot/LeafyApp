@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.leafy">
 
-    <!-- Kamera (runtime permission) -->
+
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature
@@ -12,6 +12,7 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
+        android:name=".LeafyApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -27,7 +28,7 @@
             </intent-filter>
         </service>
 
-        <!-- FileProvider untuk foto kamera -->
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

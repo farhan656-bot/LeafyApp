@@ -14,7 +14,8 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.leafy.components.LeafyBottomBar
 import com.example.leafy.data.UserPreferences
-import com.example.leafy.screens.*
+import com.example.leafy.screens.* // Pastikan semua file Screen berada di package ini
+import com.example.leafy.ui.screens.CareHistoryScreen
 import com.example.leafy.ui.theme.LeafyTheme
 import com.example.leafy.utils.NotificationUtils
 import kotlinx.coroutines.runBlocking
@@ -29,7 +30,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        setIntent(intent) // penting biar Activity.intent ikut update
+        setIntent(intent)
+        // Mengambil rute dari intent jika dipicu notifikasi saat aplikasi berjalan
         pendingNavRoute = intent.getStringExtra(EXTRA_NAV_ROUTE)
     }
 
@@ -43,14 +45,14 @@ class MainActivity : ComponentActivity() {
         val prefs = UserPreferences(this)
         val isLoggedIn = runBlocking { prefs.isUserLoggedIn() }
 
-        // route dari notif saat cold start
+        // Route dari notifikasi saat aplikasi benar-benar tertutup (cold start)
         val launchRoute = intent.getStringExtra(EXTRA_NAV_ROUTE)
 
         setContent {
             LeafyTheme {
                 val navController = rememberNavController()
 
-                // handle klik notif saat app sudah jalan
+                // Handle navigasi otomatis dari notifikasi
                 val routeToGo = pendingNavRoute
                 LaunchedEffect(routeToGo) {
                     if (!routeToGo.isNullOrBlank()) {
@@ -62,8 +64,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val bottomRoutes = listOf("home", "stats", "gallery", "profile")
-                val currentRoute =
-                    navController.currentBackStackEntryAsState().value?.destination?.route
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
 
                 Scaffold(
                     bottomBar = {
@@ -77,13 +79,19 @@ class MainActivity : ComponentActivity() {
                         startDestination = if (isLoggedIn) (launchRoute ?: "home") else "onboarding",
                         modifier = Modifier.padding(innerPadding)
                     ) {
+                        // --- AUTH ---
                         composable("onboarding") { OnboardingScreen(navController) }
                         composable("login") { LoginScreen(navController) }
                         composable("signup") { SignUpScreen(navController) }
 
+                        // --- HOME & ADD ---
                         composable("home") { HomeScreen(navController) }
-                        composable("addPlant") { AddPlantScreen(navController) }
 
+                        composable("addPlant") {
+                            AddPlantScreen(navController, plantId = null)
+                        }
+
+                        // --- DETAIL & EDIT ---
                         composable(
                             "editPlant/{plantId}",
                             arguments = listOf(navArgument("plantId") { type = NavType.IntType })
@@ -100,10 +108,23 @@ class MainActivity : ComponentActivity() {
                             PlantDetailScreen(navController, id)
                         }
 
+                        // --- UPDATE: FIX CRASH RIWAYAT PERAWATAN ---
+                        // Menambahkan rute careHistory agar aplikasi tidak crash saat tombol ditekan
+                        composable(
+                            route = "careHistory/{plantId}",
+                            arguments = listOf(navArgument("plantId") { type = NavType.IntType })
+                        ) { backStack ->
+                            val id = backStack.arguments?.getInt("plantId") ?: 0
+                            CareHistoryScreen(navController, id)
+                        }
+
+                        // --- LAINNYA ---
                         composable("profile") { ProfileScreen(navController) }
                         composable("stats") { StatisticsScreen(navController) }
-                        composable("notification") { NotificationScreen(navController) }
                         composable("gallery") { GalleryScreen(navController) }
+
+                        // FIX: Menggunakan "notification" (Tunggal) sesuai pemanggilan di HomeScreen
+                        composable("notification") { NotificationScreen(navController) }
                     }
                 }
             }

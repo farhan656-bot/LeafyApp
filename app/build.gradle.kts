@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.leafy"
-    compileSdk = 34 // gunakan 34, paling stabil untuk Compose + Room
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.leafy"
@@ -54,12 +54,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("androidx.activity:activity-compose:1.9.3")
 
-    // --- Compose BOM (kompatibel penuh) ---
-    implementation(platform("androidx.compose:compose-bom:2024.09.00"))
+    // --- Compose BOM (versi stabil) ---
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3:1.3.0")
+    implementation("androidx.compose.material3:material3") // Versi diatur oleh BOM
 
     // --- Navigation Compose ---
     implementation("androidx.navigation:navigation-compose:2.8.2")
@@ -80,21 +80,18 @@ dependencies {
 
     // --- Coroutines ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    
+    // --- Firebase (Konfigurasi yang sudah dibersihkan) ---
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
     // --- Test & Debug ---
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-
-    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
-    implementation("com.google.firebase:firebase-messaging-ktx")
-
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
-    implementation("com.google.firebase:firebase-messaging-ktx")
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-messaging")
 }

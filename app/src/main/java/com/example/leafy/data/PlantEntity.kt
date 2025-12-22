@@ -14,5 +14,6 @@ data class PlantEntity(
     val location: String? = null,
     val notes: String? = null,
     val imageUri: String? = null,
-    val lastWatered: Long? = null
+    val lastWatered: Long? = null,
+    val schedule: String
 )

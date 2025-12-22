@@ -39,27 +39,27 @@ fun GalleryScreen(navController: NavController) {
     val context = LocalContext.current
     val db = remember { LeafyDatabase.getDatabase(context) }
 
-    // ambil list tanaman untuk dropdown filter
+
     val plantsFlow = remember { db.plantDao().observeAllPlants() }
     val plants by plantsFlow.collectAsState(initial = emptyList())
 
-    // null = semua tanaman
+
     var selectedPlantId by remember { mutableStateOf<Int?>(null) }
 
-    // logs: default ORDER BY createdAt DESC dari query DAO (tanpa sorting UI)
+
     val logsFlow: Flow<List<PlantLogEntity>> = remember(selectedPlantId) {
         if (selectedPlantId == null) db.plantLogDao().observeAllLogs()
         else db.plantLogDao().observeLogsByPlantId(selectedPlantId!!)
     }
     val logs by logsFlow.collectAsState(initial = emptyList())
 
-    // map plantId -> plantName
+
     val plantNameMap = remember(plants) { plants.associate { it.id to it.name } }
 
     val dateFmt = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")) }
 
     Scaffold(
-        containerColor = LeafyGreen, // ✅ sama seperti screen lain
+        containerColor = LeafyGreen,
         topBar = {
             TopAppBar(
                 title = { Text("Gallery Perawatan", color = Color.White, fontWeight = FontWeight.Bold) },
@@ -80,7 +80,7 @@ fun GalleryScreen(navController: NavController) {
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
 
-            // ✅ Hanya filter tanaman (tanpa sorting)
+
             PlantFilterDropdown(
                 plants = plants,
                 selectedPlantId = selectedPlantId,
